@@ -1,61 +1,97 @@
-import React, { useRef, useEffect, useState } from 'react';
-import './Canvas.css';
+import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 
-const Canvas = ({ predictDigit }) => {
+const Canvas = () => {
   const canvasRef = useRef(null);
+  const [predictedDigit, setPredictedDigit] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.lineWidth = 10;
-    context.lineCap = 'round';
-    context.strokeStyle = 'black';
+    const ctx = canvas.getContext('2d');
+
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 20;
+    ctx.lineCap = 'round';
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
 
-  const startDrawing = (event) => {
-    const { offsetX, offsetY } = event.nativeEvent;
+  const startDrawing = (e) => {
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.beginPath();
-    context.moveTo(offsetX, offsetY);
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+
     setIsDrawing(true);
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
   };
 
-  const draw = (event) => {
+  const draw = (e) => {
     if (!isDrawing) return;
-    const { offsetX, offsetY } = event.nativeEvent;
+
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.lineTo(offsetX, offsetY);
-    context.stroke();
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
   };
 
   const endDrawing = () => {
     setIsDrawing(false);
-    predictDigit();
+  };
+
+  const handlePredict = () => {
+    const canvas = canvasRef.current;
+    const imageData = canvas.toDataURL('image/png');
+
+    axios.post('/predict', { imageData })
+      .then(response => {
+        setPredictedDigit(response.data.digit);
+      })
+      .catch(error => {
+        console.error('Erreur lors de la prédiction:', error);
+      });
   };
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setPredictedDigit(null);
   };
 
   return (
-    <div className="canvas-container">
-      <canvas
-        ref={canvasRef}
-        className="canvas"
+    <div>
+      <canvas ref={canvasRef} width={280} height={280}
+        style={{ border: '1px solid black', marginBottom: '10px' }}
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={endDrawing}
         onMouseOut={endDrawing}
-        width="280"
-        height="280"
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={endDrawing}
       />
-      <button onClick={predictDigit}>Predict</button>
-      <button onClick={clearCanvas}>Effacer</button>
+      <div>
+        <button onClick={handlePredict}>Prédire</button>
+        <button onClick={clearCanvas}>Effacer</button>
+      </div>
+      {predictedDigit !== null && (
+        <div>
+          <h2>Résultat:</h2>
+          <p>Chiffre prédit: {predictedDigit}</p>
+        </div>
+      )}
     </div>
   );
 };

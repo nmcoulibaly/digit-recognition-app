@@ -1,12 +1,10 @@
 import React from 'react';
-
-const Prediction = ({ prediction }) => {
-  return (
-    <div className="prediction">
-      <h2>Résultat de la prédiction :</h2>
-      <p>{prediction}</p>
-    </div>
-  );
-};
-
+const Prediction = ({ predictedDigit }) => {
+    return (
+      <div>
+        <h2>Résultat de la prédiction:</h2>
+        <p>Chiffre prédit: {predictedDigit}</p>
+      </div>
+    );
+  };
 export default Prediction;
