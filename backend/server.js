@@ -1,18 +1,15 @@
 const express = require('express');
-const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const connectDB = require('./database/db');
+const predictionController = require('./controllers/predictionController');
+
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Connect to MongoDB
-mongoose.connect('mongodb://mongo:27017/digitdb', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
+connectDB();
 
-// Routes
-app.get('/', (req, res) => res.send('Hello from the backend'));
+app.post('/api', predictionController.predictDigit);
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
