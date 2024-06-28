@@ -4,6 +4,7 @@ import axios from 'axios';
 const Canvas = () => {
   const canvasRef = useRef(null);
   const [predictedDigit, setPredictedDigit] = useState(null);
+  const [confidence, setConfidence] = useState(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
@@ -95,6 +96,7 @@ const Canvas = () => {
       .then(response => {
         console.log('Response:', response.data);
         setPredictedDigit(response.data.prediction);
+        setConfidence(response.data.confidence);
       })
       .catch(error => {
         console.error('Erreur lors de la prédiction:', error);
@@ -108,6 +110,7 @@ const Canvas = () => {
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     setPredictedDigit(null);
+    setConfidence(null);
   };
 
   return (
@@ -130,6 +133,7 @@ const Canvas = () => {
         <div>
           <h2>Prediction:</h2>
           <p style={{ fontWeight: 'bold', fontSize: '60px' }}>{predictedDigit}</p>
+          <p>Confiance: {confidence.toFixed(2)}%</p>
         </div>
       )}
     </div>

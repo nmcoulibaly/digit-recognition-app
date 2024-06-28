@@ -2,9 +2,8 @@ from flask import Flask, request, jsonify
 import numpy as np
 from joblib import load
 import os
-from sklearn.metrics import accuracy_score
-
 from flask_cors import CORS
+from pymongo import MongoClient
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +14,10 @@ model_path = os.path.join(current_dir, 'best_digit_recognition_model.pkl')
 def load_model():
     model = load(model_path)
     return model
+
+client = MongoClient('mongodb+srv://ndeye:ndeyeIpssi@atlascluster.mp58qo5.mongodb.net/?retryWrites=true&w=majority&appName=AtlasCluster')
+db = client['digit_recognition']
+collection = db['predict']
 
 @app.route('/api/predict_digit', methods=['POST'])
 def predict_digit():
@@ -31,9 +34,20 @@ def predict_digit():
 
         model = load_model()
         prediction = model.predict(input_data)
+        prediction_proba = model.predict_proba(input_data)
+        confidence = np.max(prediction_proba) * 100
         print('Prédiction:', prediction)
+        print('Confiance:', confidence)
 
-        return jsonify({'prediction': int(prediction[0])})
+        # Sauvegarde dans MongoDB
+        prediction_data = {
+            'pixels': pixels,
+            'prediction': int(prediction[0]),
+            'confidence': confidence
+        }
+        collection.insert_one(prediction_data)
+
+        return jsonify({'prediction': int(prediction[0]), 'confidence': confidence})
 
     except Exception as e:
         print(f"Erreur lors de la prédiction: {str(e)}")
@@ -41,4 +55,4 @@ def predict_digit():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000,debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
