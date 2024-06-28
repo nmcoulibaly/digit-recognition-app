@@ -15,6 +15,24 @@ const Canvas = () => {
     ctx.lineCap = 'round';
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', endDrawing);
+    canvas.addEventListener('mouseout', endDrawing);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', endDrawing);
+
+    return () => {
+      canvas.removeEventListener('mousedown', startDrawing);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', endDrawing);
+      canvas.removeEventListener('mouseout', endDrawing);
+      canvas.removeEventListener('touchstart', startDrawing);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', endDrawing);
+    };
   }, []);
 
   const startDrawing = (e) => {
@@ -48,13 +66,35 @@ const Canvas = () => {
     setIsDrawing(false);
   };
 
+  const getCanvasPixels = (canvas) => {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 28;
+    tempCanvas.height = 28;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(canvas, 0, 0, 28, 28);
+
+    const imageData = tempCtx.getImageData(0, 0, 28, 28);
+    const data = imageData.data;
+    const grayscale = [];
+
+    for (let i = 0; i < data.length; i += 4) {
+      const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      grayscale.push(avg / 255);
+    }
+
+    console.log('Grayscale pixels:', grayscale);
+    return grayscale;
+  };
+
   const handlePredict = () => {
     const canvas = canvasRef.current;
-    const imageData = canvas.toDataURL('image/png');
+    const pixels = getCanvasPixels(canvas);
+    console.log('Pixels:', pixels);
 
-    axios.post('/predict', { imageData })
+    axios.post('http://localhost:5000/api/predict_digit', { pixels })
       .then(response => {
-        setPredictedDigit(response.data.digit);
+        console.log('Response:', response.data);
+        setPredictedDigit(response.data.prediction);
       })
       .catch(error => {
         console.error('Erreur lors de la prédiction:', error);
@@ -88,8 +128,8 @@ const Canvas = () => {
       </div>
       {predictedDigit !== null && (
         <div>
-          <h2>Résultat:</h2>
-          <p>Chiffre prédit: {predictedDigit}</p>
+          <h2>Prediction:</h2>
+          <p style={{ fontWeight: 'bold', fontSize: '60px' }}>{predictedDigit}</p>
         </div>
       )}
     </div>

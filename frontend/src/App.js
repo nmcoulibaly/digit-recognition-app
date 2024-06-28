@@ -46,7 +46,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Reconnaissance de chiffres avec TensorFlow.js</h1>
+      <h1>Reconnaissance de chiffres avec SVM</h1>
       <Canvas predictDigit={predictDigit} />
       {prediction !== null && <Prediction prediction={prediction} />}
       {/* {loadingModel ? (
